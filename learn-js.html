@@ -1,0 +1,423 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  CheckCircle, PlayCircle, Trophy, Code, ArrowRight, ArrowLeft, 
+  Menu, X, Globe, Star, Sparkles 
+} from 'lucide-react';
+
+// Helper to densely create exactly 100 lessons
+const L = (id, tEn, tMy, dEn, dMy, code, qEn, qMy, optsEn, optsMy, ans) => ({
+  id,
+  title: { en: tEn, my: tMy },
+  desc: { en: dEn, my: dMy },
+  code,
+  quiz: { q: { en: qEn, my: qMy }, options: { en: optsEn, my: optsMy }, ans }
+});
+
+const lessonsData = [
+  // 1-5: Intro & Variables
+  L(1, "Welcome to JS!", "JS မှ ကြိုဆိုပါတယ်!", "JavaScript is a language that tells computers what to do. It makes web pages fun!", "JavaScript ဆိုတာ ကွန်ပျူတာကို အလုပ်ခိုင်းတဲ့ ဘာသာစကားပါ။ ဝဘ်စာမျက်နှာတွေကို ပျော်စရာဖြစ်စေတယ်!", "console.log('Hello!');", "What does JavaScript do?", "JavaScript က ဘာလုပ်သလဲ?", ["Makes web pages fun", "Cooks food", "Drives a car"], ["ဝဘ်စာမျက်နှာတွေကို ပျော်စရာဖြစ်စေတယ်", "အစားအစာ ချက်ပြုတ်တယ်", "ကားမောင်းတယ်"], 0),
+  L(2, "The Console", "Console (ကွန်ဆိုးလ်)", "The console is where the computer talks back to you. We use console.log() to print messages.", "Console ဆိုတာ ကွန်ပျူတာက သင့်ကို စကားပြန်ပြောတဲ့ နေရာပါ။ စာသားတွေထုတ်ပြဖို့ console.log() ကို သုံးပါတယ်။", "console.log('I am a coder!');", "Which command prints a message?", "ဘယ် command က စာသားကို ထုတ်ပြလဲ?", ["print.out()", "console.log()", "show.text()"], ["print.out()", "console.log()", "show.text()"], 1),
+  L(3, "Variables (let)", "ကိန်းရှင်များ (let)", "A variable is like a box where you store data. 'let' creates a variable that can change.", "ကိန်းရှင် (variable) ဆိုတာ ဒေတာတွေသိမ်းတဲ့ ဘူးလေးနဲ့တူပါတယ်။ 'let' က ပြောင်းလဲလို့ရတဲ့ ကိန်းရှင်ကို ဖန်တီးပေးတယ်။", "let age = 13;\nconsole.log(age);", "What is a variable like?", "Variable ဆိုတာ ဘာနဲ့တူလဲ?", ["A bird", "A box for data", "A window"], ["ငှက်တစ်ကောင်", "ဒေတာသိမ်းတဲ့ ဘူးလေး", "ပြတင်းပေါက်"], 1),
+  L(4, "Variables (const)", "ကိန်းရှင်များ (const)", "'const' is a box that gets locked! Once you put data inside, you cannot change it.", "'const' ဆိုတာ သော့ခတ်ထားတဲ့ ဘူးပါ။ ဒေတာထည့်ပြီးရင် ပြန်ပြောင်းလို့ မရတော့ပါဘူး။", "const name = 'Ko Ko';\n// name = 'Mg Mg'; <-- Error!", "Can you change a 'const' variable?", "'const' variable ကို ပြောင်းလို့ရလား?", ["Yes", "Sometimes", "No"], ["ရတယ်", "တစ်ခါတလေရတယ်", "မရဘူး"], 2),
+  L(5, "Updating 'let'", "'let' ကို ပြင်ဆင်ခြင်း", "You can update the value of a 'let' variable anytime by using the equals sign (=) again.", "'let' ကိုသုံးထားရင် equals sign (=) သုံးပြီး တန်ဖိုးကို အချိန်မရွေး ပြန်ပြောင်းလို့ရပါတယ်။", "let score = 10;\nscore = 20; // Updated!", "How do you update a variable?", "Variable ကို ဘယ်လိုပြောင်းမလဲ?", ["Using =", "Using +", "Using ?"], ["= ကိုသုံးပြီး", "+ ကိုသုံးပြီး", "? ကိုသုံးပြီး"], 0),
+
+  // 6-10: Data Types & Basic Math
+  L(6, "Strings", "Strings (စာသားများ)", "Strings are just text. You must wrap them in quotes (' ' or \" \").", "Strings ဆိုတာ စာသားတွေပါ။ ၎င်းတို့ကို မျက်တောင်အဖွင့်အပိတ် (' ' သို့ \" \") ထဲမှာ ထည့်ရေးရပါတယ်။", "let color = 'Blue';", "Which one is a String?", "ဘယ်တစ်ခုက String ဖြစ်မလဲ?", ["500", "'Hello'", "true"], ["500", "'Hello'", "true"], 1),
+  L(7, "Numbers", "Numbers (ကိန်းဂဏန်းများ)", "Numbers are math digits. No quotes are needed for numbers!", "Numbers ဆိုတာ ဂဏန်းတွေပါ။ မျက်တောင်အဖွင့်အပိတ် (quotes) ထည့်စရာ မလိုပါဘူး။", "let lives = 3;\nlet price = 9.99;", "Do numbers need quotes?", "ဂဏန်းတွေမှာ quotes လိုအပ်လား?", ["Yes", "No", "Only on Sundays"], ["လိုအပ်တယ်", "မလိုအပ်ဘူး", "တနင်္ဂနွေနေ့မှသာ"], 1),
+  L(8, "Booleans", "Booleans (မှန်/မှား)", "A Boolean has only two values: true (yes) or false (no). Like a light switch!", "Boolean မှာ တန်ဖိုးနှစ်ခုပဲရှိပါတယ်။ true (မှန်) နဲ့ false (မှား) ပါ။ မီးခလုတ်နဲ့ တူပါတယ်။", "let isGameOver = false;\nlet isWinner = true;", "What values can a Boolean be?", "Boolean မှာ ဘာတန်ဖိုးတွေ ရှိနိုင်လဲ?", ["1, 2, 3", "true or false", "Red or Blue"], ["၁၊ ၂၊ ၃", "true (သို့) false", "အနီ (သို့) အပြာ"], 1),
+  L(9, "Addition (+)", "ပေါင်းခြင်း (+)", "You can add numbers together using the plus sign (+).", "အပေါင်းလက္ခဏာ (+) ကိုသုံးပြီး ဂဏန်းတွေကို ပေါင်းနိုင်ပါတယ်။", "let total = 5 + 3; // 8", "What is 10 + 5?", "၁၀ + ၅ က ဘယ်လောက်လဲ?", ["15", "105", "50"], ["၁၅", "၁၀၅", "၅၀"], 0),
+  L(10, "Subtraction (-)", "နုတ်ခြင်း (-)", "You can subtract numbers using the minus sign (-).", "အနုတ်လက္ခဏာ (-) ကိုသုံးပြီး ဂဏန်းတွေကို နုတ်နိုင်ပါတယ်။", "let points = 20 - 5; // 15", "What is 10 - 4?", "၁၀ - ၄ က ဘယ်လောက်လဲ?", ["14", "6", "40"], ["၁၄", "၆", "၄၀"], 1),
+
+  // 11-15: More Math
+  L(11, "Multiplication (*)", "မြှောက်ခြင်း (*)", "Use the asterisk (*) to multiply numbers in JavaScript.", "ဂဏန်းတွေကို မြှောက်ဖို့ ကြယ်ပွင့် (*) လက္ခဏာကို သုံးပါတယ်။", "let power = 4 * 5; // 20", "What is 3 * 3?", "၃ * ၃ က ဘယ်လောက်လဲ?", ["6", "9", "33"], ["၆", "၉", "၃၃"], 1),
+  L(12, "Division (/)", "စားခြင်း (/)", "Use the forward slash (/) to divide numbers.", "ဂဏန်းတွေကို စားဖို့ မျဉ်းစောင်း (/) ကို သုံးပါတယ်။", "let half = 10 / 2; // 5", "What is 20 / 4?", "၂၀ / ၄ က ဘယ်လောက်လဲ?", ["5", "16", "80"], ["၅", "၁၆", "၈၀"], 0),
+  L(13, "Modulo (%)", "စားကြွင်း (%)", "The percent sign (%) gives you the remainder after dividing.", "ရာခိုင်နှုန်းလက္ခဏာ (%) က စားပြီးကျန်တဲ့ စားကြွင်းကို ပေးပါတယ်။", "let remainder = 10 % 3; // 1", "What does % do?", "% က ဘာလုပ်ပေးလဲ?", ["Multiplies", "Finds the remainder", "Makes it a percentage"], ["မြှောက်ပေးတယ်", "စားကြွင်းရှာပေးတယ်", "ရာခိုင်နှုန်းပြောင်းပေးတယ်"], 1),
+  L(14, "Increment (++)", "တိုးခြင်း (++)", "Writing ++ adds exactly 1 to a variable. Great for counting score!", "++ လို့ရေးရင် ကိန်းရှင်ကို ၁ တိတိ တိုးပေးပါတယ်။ အမှတ်ရေတွက်ဖို့ အကောင်းဆုံးပါပဲ။", "let score = 0;\nscore++; // Now score is 1", "If x is 5, what is x++?", "x က ၅ ဆိုရင် x++ က ဘယ်လောက်ဖြစ်မလဲ?", ["4", "5", "6"], ["၄", "၅", "၆"], 2),
+  L(15, "Decrement (--)", "လျှော့ခြင်း (--)", "Writing -- subtracts exactly 1 from a variable.", "-- လို့ရေးရင် ကိန်းရှင်ထဲက ၁ ကို တိတိကျကျ လျှော့ပေးပါတယ်။", "let timer = 10;\ntimer--; // Now timer is 9", "If lives=3, what does lives-- do?", "lives=3 ဆိုရင် lives-- က ဘာဖြစ်သွားမလဲ?", ["Makes it 4", "Makes it 2", "Makes it 0"], ["၄ ဖြစ်သွားမယ်", "၂ ဖြစ်သွားမယ်", "၀ ဖြစ်သွားမယ်"], 1),
+
+  // 16-20: String Manipulation
+  L(16, "Joining Strings (+)", "စာသားများ ဆက်ခြင်း (+)", "You can glue strings together using the plus sign (+). This is called concatenation.", "အပေါင်း (+) ကိုသုံးပြီး စာသားတွေကို ဆက်လို့ရပါတယ်။ ဒါကို Concatenation လို့ခေါ်တယ်။", "let greeting = 'Hi ' + 'Ko Ko';\n// 'Hi Ko Ko'", "How do you join 'A' and 'B'?", "'A' နဲ့ 'B' ကို ဘယ်လိုဆက်မလဲ?", ["'A' - 'B'", "'A' + 'B'", "'A' * 'B'"], ["'A' - 'B'", "'A' + 'B'", "'A' * 'B'"], 1),
+  L(17, "Template Literals", "Template Literals (` `)", "Backticks (` `) let you easily insert variables into strings using ${ }.", "Backticks (` `) နဲ့ ${ } သုံးပြီး စာသားထဲကို ကိန်းရှင်တွေ အလွယ်တကူ ထည့်လို့ရတယ်။", "let age = 13;\nlet msg = `I am ${age}`;", "Which symbol is a backtick?", "Backtick လက္ခဏာက ဘယ်ဟာလဲ?", ["'", "\"", "`"], ["'", "\"", "`"], 2),
+  L(18, "String Length", "စာသားအရှည် (length)", "You can find out how many characters are in a string by adding .length", "စာသားရဲ့ အရှည်ကို သိချင်ရင် .length ကို သုံးနိုင်ပါတယ်။", "let word = 'Apple';\nconsole.log(word.length); // 5", "What is 'Cat'.length?", "'Cat'.length ရဲ့တန်ဖိုးက ဘာလဲ?", ["1", "3", "Cat"], ["၁", "၃", "Cat"], 1),
+  L(19, "toUpperCase()", "အကြီးပြောင်းခြင်း", "toUpperCase() makes all the letters in a string CAPITALIZED!", "toUpperCase() က စာသားအားလုံးကို အကြီးစာလုံး (Capital) ပြောင်းပေးပါတယ်။", "let shout = 'hello'.toUpperCase();\n// 'HELLO'", "What does toUpperCase do?", "toUpperCase က ဘာလုပ်ပေးလဲ?", ["Makes letters small", "Makes letters BIG", "Deletes letters"], ["စာလုံးသေးဖြစ်စေတယ်", "စာလုံးကြီးဖြစ်စေတယ်", "စာလုံးတွေကိုဖျက်တယ်"], 1),
+  L(20, "toLowerCase()", "အသေးပြောင်းခြင်း", "toLowerCase() makes all the letters in a string lowercase.", "toLowerCase() က စာသားအားလုံးကို အသေးစာလုံး (lowercase) ပြောင်းပေးပါတယ်။", "let whisper = 'QUIET'.toLowerCase();\n// 'quiet'", "How do you make 'DOG' into 'dog'?", "'DOG' ကို 'dog' ဖြစ်အောင် ဘယ်လိုလုပ်မလဲ?", ["toLowerCase()", "toUpperCase()", "small()"], ["toLowerCase()", "toUpperCase()", "small()"], 0),
+
+  // 21-25: Conditionals (Booleans & Comparisons)
+  L(21, "Equality (==)", "တူညီမှု (==)", "Two equals signs (==) check if two values are the same.", "ညီမျှခြင်းနှစ်ခု (==) က တန်ဖိုးနှစ်ခု တူ/မတူ စစ်ဆေးပေးပါတယ်။", "console.log(5 == 5); // true\nconsole.log(5 == 8); // false", "What does 10 == 10 evaluate to?", "၁၀ == ၁၀ က ဘာဖြစ်မလဲ?", ["true", "false", "100"], ["မှန် (true)", "မှား (false)", "၁၀၀"], 0),
+  L(22, "Strict Equality (===)", "အသေအချာတူညီမှု (===)", "Three equals (===) check if values AND types are exactly the same. Always use this!", "ညီမျှခြင်းသုံးခု (===) က တန်ဖိုးရော အမျိုးအစားပါ တူ/မတူ အသေအချာစစ်ပေးတယ်။ ဒါကို အမြဲသုံးပါ!", "console.log(5 === '5'); // false", "Why is 5 === '5' false?", "ဘာလို့ 5 === '5' က false ဖြစ်တာလဲ?", ["Math is broken", "Different types (number vs string)", "5 is not 5"], ["သင်္ချာမှားနေလို့", "အမျိုးအစားမတူလို့ (number နဲ့ string)", "၅ က ၅ မဟုတ်လို့"], 1),
+  L(23, "Not Equal (!=)", "မတူညီမှု (!=)", "An exclamation mark and equals (!=) means 'Not Equal'.", "အာမေဍိတ်နဲ့ ညီမျှခြင်း (!=) က 'မတူဘူး' လို့ အဓိပ္ပါယ်ရပါတယ်။", "console.log(5 != 3); // true", "Does 4 != 4?", "၄ != ၄ က မှန်လား?", ["Yes (true)", "No (false)"], ["မှန်တယ် (true)", "မှားတယ် (false)"], 1),
+  L(24, "Greater Than (>)", "ပိုကြီးသည် (>)", "The > sign checks if the left side is bigger than the right side.", "> လက္ခဏာက ဘယ်ဘက်က ညာဘက်ထက် ကြီး/မကြီး စစ်ဆေးပါတယ်။", "console.log(10 > 5); // true", "Is 2 > 10?", "၂ > ၁၀ က မှန်လား?", ["true", "false"], ["မှန်တယ် (true)", "မှားတယ် (false)"], 1),
+  L(25, "Less Than (<)", "ပိုငယ်သည် (<)", "The < sign checks if the left side is smaller than the right side.", "< လက္ခဏာက ဘယ်ဘက်က ညာဘက်ထက် ငယ်/မငယ် စစ်ဆေးပါတယ်။", "console.log(3 < 10); // true", "Is 5 < 2?", "၅ < ၂ က မှန်လား?", ["true", "false"], ["မှန်တယ် (true)", "မှားတယ် (false)"], 1),
+
+  // 26-30: If Statements
+  L(26, "Greater or Equal (>=)", "ကြီးသည် သို့မဟုတ် ညီသည် (>=)", ">= checks if a number is bigger OR exactly the same.", ">= က ဂဏန်းတစ်ခုက ပိုကြီးသလား သို့မဟုတ် တူညီနေသလားဆိုတာကို စစ်ဆေးပါတယ်။", "console.log(5 >= 5); // true", "Is 10 >= 10?", "၁၀ >= ၁၀ က မှန်လား?", ["true", "false"], ["မှန်တယ် (true)", "မှားတယ် (false)"], 0),
+  L(27, "Less or Equal (<=)", "ငယ်သည် သို့မဟုတ် ညီသည် (<=)", "<= checks if a number is smaller OR exactly the same.", "<= က ဂဏန်းတစ်ခုက ပိုငယ်သလား သို့မဟုတ် တူညီနေသလားဆိုတာကို စစ်ဆေးပါတယ်။", "console.log(4 <= 5); // true", "Is 8 <= 3?", "၈ <= ၃ က မှန်လား?", ["true", "false"], ["မှန်တယ် (true)", "မှားတယ် (false)"], 1),
+  L(28, "If Statement", "If Statement (အကယ်၍)", "An 'if' statement runs code ONLY if a condition is true.", "'if' statement ဟာ အခြေအနေတစ်ခု မှန်ကန်မှသာ ကုဒ်ကို အလုပ်လုပ်စေပါတယ်။", "if (score > 10) {\n  console.log('You win!');\n}", "When does 'if' run its code?", "'if' က ကုဒ်ကို ဘယ်အချိန်မှာ အလုပ်လုပ်လဲ?", ["Always", "Only if true", "Never"], ["အမြဲတမ်း", "အခြေအနေမှန်မှသာ", "ဘယ်တော့မှမလုပ်ဘူး"], 1),
+  L(29, "Else Statement", "Else Statement (မဟုတ်လျှင်)", "'else' is the backup plan. It runs if the 'if' condition is false.", "'else' ဆိုတာ အရန်အစီအစဉ်ပါ။ 'if' က မှားသွားရင် သူက အလုပ်လုပ်ပါတယ်။", "if (rain) {\n  stayHome();\n} else {\n  goPlay();\n}", "What happens if 'if' is false?", "'if' သာ မှားသွားရင် ဘာဖြစ်မလဲ?", ["The app crashes", "The 'else' block runs", "Nothing"], ["App ပျက်သွားမယ်", "'else' အပိုင်း အလုပ်လုပ်မယ်", "ဘာမှမဖြစ်ဘူး"], 1),
+  L(30, "Else If", "Else If (နောက်ထပ်အကယ်၍)", "Use 'else if' to check a second condition if the first one was false.", "ပထမအခြေအနေ မှားသွားရင် နောက်ထပ်အခြေအနေကို ထပ်စစ်ဖို့ 'else if' ကို သုံးပါတယ်။", "if (score == 100) {\n  // Perfect\n} else if (score > 50) {\n  // Pass\n}", "Can you have multiple 'else if's?", "'else if' အများကြီး သုံးလို့ရလား?", ["Yes", "No", "Only two"], ["ရတယ်", "မရဘူး", "နှစ်ခုပဲရတယ်"], 0),
+
+  // 31-35: Logic Operators
+  L(31, "AND (&&)", "AND (&&)", "&& means BOTH conditions must be true.", "&& ဆိုတာ အခြေအနေ နှစ်ခုစလုံး မှန်မှ ရမယ်လို့ ဆိုလိုတာပါ။", "if (hasSword && hasShield) {\n  fightDragon();\n}", "For && to be true, what is needed?", "&& မှန်ဖို့ ဘာလိုအပ်လဲ?", ["One must be true", "Both must be true", "Both must be false"], ["တစ်ခုမှန်ဖို့", "နှစ်ခုစလုံးမှန်ဖို့", "နှစ်ခုစလုံးမှားဖို့"], 1),
+  L(32, "OR (||)", "OR (||)", "|| means AT LEAST ONE condition must be true.", "|| ဆိုတာ အခြေအနေ တစ်ခုခု မှန်တာနဲ့ ရပြီလို့ ဆိုလိုတာပါ။", "if (isSaturday || isSunday) {\n  sleepIn();\n}", "If isSaturday is true, does || run?", "isSaturday မှန်ရင် || အလုပ်လုပ်လား?", ["Yes", "No"], ["လုပ်တယ်", "မလုပ်ဘူး"], 0),
+  L(33, "NOT (!)", "NOT (!)", "The exclamation mark (!) flips a boolean. True becomes false!", "အာမေဍိတ် (!) က တန်ဖိုးကို ပြောင်းပြန်လှန်ပစ်တယ်။ မှန်တာက မှားဖြစ်သွားတယ်!", "let isRaining = false;\nconsole.log(!isRaining); // true", "What is !true?", "!true က ဘာလဲ?", ["true", "false", "maybe"], ["မှန် (true)", "မှား (false)", "ဖြစ်နိုင်တယ်"], 1),
+  L(34, "Switch Statement", "Switch Statement", "Switch is a cleaner way to write many 'else if' checks for the same variable.", "Switch က ကိန်းရှင်တစ်ခုတည်းအတွက် 'else if' တွေ အများကြီးရေးမယ့်အစား ပိုသေသပ်တဲ့နည်းလမ်းပါ။", "switch(color) {\n  case 'red': stop(); break;\n  case 'green': go(); break;\n}", "What keyword stops a switch case?", "Switch case ကို ဘယ်စကားလုံးနဲ့ ရပ်လဲ?", ["stop", "halt", "break"], ["stop", "halt", "break"], 2),
+  L(35, "Ternary Operator (?)", "Ternary Operator (?)", "It's a mini if-else on one line! condition ? ifTrue : ifFalse;", "သူက စာကြောင်းတစ်ကြောင်းတည်းရေးရတဲ့ mini if-else ပါ! condition ? ifTrue : ifFalse;", "let msg = score > 50 ? 'Pass' : 'Fail';", "What does the ? do?", "? က ဘာလုပ်သလဲ?", ["Asks a question to the user", "Acts like an if condition", "Makes it random"], ["User ကို မေးခွန်းမေးတယ်", "if အခြေအနေလို အလုပ်လုပ်တယ်", "Random ဖြစ်စေတယ်"], 1),
+
+  // 36-40: Arrays Basics
+  L(36, "Arrays Intro", "Arrays (အစီအစဉ်များ)", "An Array is a list of items stored in one variable. We use square brackets [ ].", "Array ဆိုတာ ကိန်းရှင်တစ်ခုထဲမှာ ပစ္စည်းတွေ အများကြီး သိမ်းထားတဲ့ စာရင်းပါ။ ထောင့်ကွင်း [ ] ကို သုံးပါတယ်။", "let colors = ['red', 'blue', 'green'];", "What brackets do Arrays use?", "Array တွေမှာ ဘယ်ကွင်းကို သုံးလဲ?", ["( )", "{ }", "[ ]"], ["( )", "{ }", "[ ]"], 2),
+  L(37, "Array Index", "Array Index (အညွှန်း)", "Arrays count starting from ZERO! The first item is at index 0.", "Array တွေက သုည (၀) ကနေ စရေပါတယ်။ ပထမဆုံးပစ္စည်းက index 0 မှာ ရှိတယ်။", "let fruits = ['Apple', 'Banana'];\nconsole.log(fruits[0]); // Apple", "If array is ['Cat', 'Dog'], what is index 1?", "['Cat', 'Dog'] မှာ index 1 က ဘာလဲ?", ["Cat", "Dog", "Nothing"], ["Cat", "Dog", "ဘာမှမရှိဘူး"], 1),
+  L(38, "Array Length", "Array Length (အရှည်)", "Just like strings, use .length to see how many items are in an array.", "စာသားတွေလိုပဲ Array ထဲမှာ ပစ္စည်းဘယ်နှစ်ခုရှိလဲသိဖို့ .length ကို သုံးပါ။", "let scores = [10, 20, 30];\nconsole.log(scores.length); // 3", "What does array.length give you?", "array.length က ဘာကို ပြသလဲ?", ["The last item", "The number of items", "The first item"], ["နောက်ဆုံးပစ္စည်း", "ပစ္စည်းအရေအတွက်", "ပထမဆုံးပစ္စည်း"], 1),
+  L(39, "push()", "push() သုံးခြင်း", "push() adds a new item to the END of an array.", "push() က Array ရဲ့ အဆုံးမှာ ပစ္စည်းအသစ်တစ်ခု ထည့်ပေးပါတယ်။", "let pets = ['Dog'];\npets.push('Cat'); // ['Dog', 'Cat']", "Where does push() add the item?", "push() က ပစ္စည်းကို ဘယ်နေရာမှာ ထည့်လဲ?", ["Beginning", "Middle", "End"], ["အစမှာ", "အလယ်မှာ", "အဆုံးမှာ"], 2),
+  L(40, "pop()", "pop() သုံးခြင်း", "pop() removes the LAST item from an array.", "pop() က Array ရဲ့ နောက်ဆုံးပစ္စည်းကို ဖယ်ရှားပေးပါတယ်။", "let cars = ['BMW', 'Ford'];\ncars.pop(); // Removes 'Ford'", "What does pop() remove?", "pop() က ဘာကို ဖယ်ရှားလဲ?", ["First item", "Last item", "All items"], ["ပထမဆုံးပစ္စည်း", "နောက်ဆုံးပစ္စည်း", "အားလုံး"], 1),
+
+  // 41-45: More Arrays
+  L(41, "shift()", "shift() သုံးခြင်း", "shift() removes the FIRST item from an array.", "shift() က Array ရဲ့ ပထမဆုံးပစ္စည်းကို ဖယ်ရှားပေးပါတယ်။", "let nums = [1, 2, 3];\nnums.shift(); // Removes 1", "Which item does shift() remove?", "shift() က ဘယ်ပစ္စည်းကို ဖယ်ရှားလဲ?", ["First item", "Last item"], ["ပထမဆုံးပစ္စည်း", "နောက်ဆုံးပစ္စည်း"], 0),
+  L(42, "unshift()", "unshift() သုံးခြင်း", "unshift() adds a new item to the BEGINNING of an array.", "unshift() က Array ရဲ့ အစမှာ ပစ္စည်းအသစ်တစ်ခု ထည့်ပေးပါတယ်။", "let nums = [2, 3];\nnums.unshift(1); // [1, 2, 3]", "Where does unshift() add items?", "unshift() က ပစ္စည်းကို ဘယ်မှာထည့်လဲ?", ["Beginning", "End"], ["အစမှာ", "အဆုံးမှာ"], 0),
+  L(43, "Changing Items", "ပစ္စည်းများ ပြောင်းလဲခြင်း", "You can change an array item by assigning a new value to its index.", "Index ကို တန်ဖိုးအသစ်ပေးပြီး Array ထဲက ပစ္စည်းတွေကို ပြောင်းလဲနိုင်ပါတယ်။", "let names = ['Ko', 'Mo'];\nnames[1] = 'Bo'; // ['Ko', 'Bo']", "How do you change the first item?", "ပထမဆုံးပစ္စည်းကို ဘယ်လိုပြောင်းမလဲ?", ["arr.change()", "arr[0] = 'new'", "arr.first = 'new'"], ["arr.change()", "arr[0] = 'new'", "arr.first = 'new'"], 1),
+  L(44, "indexOf()", "indexOf() ရှာဖွေခြင်း", "indexOf() tells you the position number of an item in the array.", "indexOf() က Array ထဲမှာ ပစ္စည်းတစ်ခု ဘယ်နေရာမှာရှိလဲ ဆိုတဲ့နံပါတ်ကို ပြပေးပါတယ်။", "let letters = ['a', 'b', 'c'];\nconsole.log(letters.indexOf('b')); // 1", "If an item is NOT found, what does indexOf return?", "ပစ္စည်းကို မတွေ့ရင် indexOf က ဘာပြလဲ?", ["0", "-1", "false"], ["၀", "-၁", "false"], 1),
+  L(45, "includes()", "includes() စစ်ဆေးခြင်း", "includes() returns true if an array has a specific item, false if not.", "includes() က Array ထဲမှာ ပစ္စည်းတစ်ခု ပါ/မပါ စစ်ဆေးပြီး true သို့ false ပြန်ပေးပါတယ်။", "let fruits = ['Apple'];\nconsole.log(fruits.includes('Apple')); // true", "What does includes() return?", "includes() က ဘာပြန်ပေးလဲ?", ["A number", "True or False", "A string"], ["ဂဏန်း", "True သို့ False", "စာသား"], 1),
+
+  // 46-50: Loops
+  L(46, "Loops Intro", "Loops (ပတ်ခြင်း)", "Loops run the same block of code over and over again until a condition is met.", "Loops တွေက အခြေအနေတစ်ခု မပြည့်စုံမချင်း ကုဒ်တွေကို ထပ်ခါထပ်ခါ အလုပ်လုပ်ပေးပါတယ်။", "for(let i=0; i<3; i++) {\n  // Runs 3 times\n}", "Why do we use loops?", "Loops တွေကို ဘာလို့သုံးလဲ?", ["To slow down code", "To repeat code", "To delete code"], ["ကုဒ်ကို နှေးစေဖို့", "ကုဒ်ကို ထပ်ခါတလဲလဲလုပ်ဖို့", "ကုဒ်ကို ဖျက်ဖို့"], 1),
+  L(47, "For Loop", "For Loop အသုံးပြုခြင်း", "A 'for' loop has 3 parts: start, condition, and step.", "For loop မှာ အပိုင်း ၃ ပိုင်းရှိတယ် - အစ၊ အခြေအနေ၊ နဲ့ အဆင့် (step) ပါ။", "for (let i = 1; i <= 5; i++) {\n  console.log(i);\n}", "What does i++ do in the loop?", "Loop ထဲက i++ က ဘာလုပ်လဲ?", ["Adds 1 each time", "Subtracts 1", "Stops the loop"], ["တစ်ကြိမ်ကို ၁ တိုးတယ်", "၁ လျှော့တယ်", "Loop ကို ရပ်တယ်"], 0),
+  L(48, "While Loop", "While Loop", "A 'while' loop repeats AS LONG AS a condition is true. Careful not to loop forever!", "While loop က အခြေအနေမှန်နေသရွေ့ ထပ်ခါထပ်ခါ လုပ်ပေးပါတယ်။ အဆုံးမရှိလည်နေတာမျိုး မဖြစ်အောင် သတိထားပါ။", "let hp = 3;\nwhile(hp > 0) {\n  hp--;\n}", "When does a while loop stop?", "While loop ဘယ်အချိန်မှာ ရပ်လဲ?", ["When it's tired", "When condition is false", "Never"], ["သူပင်ပန်းသွားရင်", "အခြေအနေ မှားသွားတဲ့အခါ", "ဘယ်တော့မှမရပ်ဘူး"], 1),
+  L(49, "Break Statement", "Break Statement (ဖြတ်တောက်ခြင်း)", "Use 'break' to instantly jump out and destroy a loop early!", "'break' ကိုသုံးပြီး loop ထဲကနေ ချက်ချင်းခုန်ထွက်ပြီး ရပ်ပစ်နိုင်ပါတယ်။", "for(let i=0; i<10; i++) {\n  if(i === 5) break;\n}", "What does 'break' do?", "'break' က ဘာလုပ်လဲ?", ["Pauses the loop", "Exits the loop completely", "Restarts the loop"], ["Loop ကို ခဏရပ်တယ်", "Loop ထဲကနေ လုံးဝထွက်လိုက်တယ်", "Loop ကို ပြန်စတယ်"], 1),
+  L(50, "Continue Statement", "Continue Statement (ကျော်သွားခြင်း)", "Use 'continue' to skip the rest of the current loop step and jump to the next one.", "လက်ရှိအဆင့်ကို ကျော်ပြီး နောက်တစ်ကြိမ် loop ကို ဆက်သွားဖို့ 'continue' ကို သုံးပါတယ်။", "for(let i=0; i<3; i++) {\n  if(i === 1) continue; \n  // skips 1\n}", "Does 'continue' stop the whole loop?", "'continue' က loop တစ်ခုလုံးကို ရပ်ပစ်လား?", ["Yes", "No, just skips that step"], ["ရပ်ပစ်တယ်", "မရပ်ဘူး၊ အဲဒီအဆင့်ကိုပဲ ကျော်သွားတာ"], 1),
+
+  // 51-55: Functions
+  L(51, "Functions Intro", "Functions (လုပ်ဆောင်ချက်များ)", "A function is a block of code you can save and use later, like a custom command.", "Function ဆိုတာ နောက်မှပြန်သုံးလို့ရအောင် သိမ်းထားတဲ့ ကုဒ်အစုအဝေးပါ။ ကိုယ်ပိုင် command တစ်ခုလိုပါပဲ။", "function sayHi() {\n  console.log('Hi!');\n}", "What is a function like?", "Function က ဘာနဲ့တူလဲ?", ["A saved command", "A variable type", "A loop"], ["သိမ်းထားတဲ့ command", "Variable အမျိုးအစား", "Loop တစ်ခု"], 0),
+  L(52, "Calling Functions", "Function ခေါ်သုံးခြင်း", "A function doesn't run until you 'call' it by writing its name with parentheses ().", "Function ကို နာမည်နောက်မှာ ကွင်းစကွင်းပိတ် () ထည့်ပြီး 'မခေါ်' မချင်း သူက အလုပ်မလုပ်ပါဘူး။", "sayHi(); // This runs it!", "How do you call a function named 'jump'?", "'jump' နာမည်ရှိတဲ့ function ကို ဘယ်လိုခေါ်မလဲ?", ["jump[]", "jump()", "call jump"], ["jump[]", "jump()", "call jump"], 1),
+  L(53, "Parameters", "Parameters (ကန့်သတ်ချက်များ)", "Functions can take inputs called parameters, which act like variables inside the function.", "Function တွေမှာ parameter လို့ခေါ်တဲ့ input တွေ ထည့်လို့ရတယ်။ သူတို့က function ထဲမှာ variable လို အလုပ်လုပ်ပါတယ်။", "function add(a, b) {\n  console.log(a + b);\n}", "Where do parameters go?", "Parameter တွေကို ဘယ်မှာထည့်ရလဲ?", ["In the { }", "In the ( )", "Before the name"], ["{ } ထဲမှာ", "( ) ထဲမှာ", "နာမည်ရှေ့မှာ"], 1),
+  L(54, "Return Statement", "Return Statement", "Functions can give a value back to you using the 'return' keyword.", "Function တွေက 'return' ကိုသုံးပြီး တန်ဖိုးတစ်ခု ပြန်ပေးနိုင်ပါတယ်။", "function getTen() {\n  return 10;\n}\nlet x = getTen();", "What keyword sends a value back?", "ဘယ်စကားလုံးက တန်ဖိုးပြန်ပေးလဲ?", ["give", "send", "return"], ["give", "send", "return"], 2),
+  L(55, "Variable Scope", "Variable Scope", "Variables made INSIDE a function cannot be seen OUTSIDE. This is called Local Scope.", "Function ထဲမှာ ဖန်တီးထားတဲ့ variable တွေကို အပြင်ကနေ သုံးလို့မရပါဘူး။ ဒါကို Local Scope လို့ခေါ်တယ်။", "function test() {\n  let secret = 123;\n}\n// console.log(secret); // ERROR", "Can you use a local variable outside its function?", "Local variable ကို function အပြင်မှာ သုံးလို့ရလား?", ["Yes", "No", "Sometimes"], ["ရတယ်", "မရဘူး", "တစ်ခါတလေရတယ်"], 1),
+
+  // 56-60: Advanced Functions & Objects Intro
+  L(56, "Global Scope", "Global Scope", "Variables created OUTSIDE any function are Global. Everyone can see and use them!", "Function အပြင်ဘက်မှာ ဖန်တီးထားတဲ့ variable တွေကို Global လို့ခေါ်တယ်။ နေရာတိုင်းကနေ သုံးလို့ရတယ်!", "let score = 0;\nfunction win() { score++; }", "Where are global variables created?", "Global variable တွေကို ဘယ်မှာ ဖန်တီးလဲ?", ["Inside a loop", "Outside all functions", "Inside a function"], ["Loop ထဲမှာ", "Function အားလုံးရဲ့ အပြင်မှာ", "Function ထဲမှာ"], 1),
+  L(57, "Arrow Functions", "Arrow Functions (မြှားလုပ်ဆောင်ချက်)", "Arrow functions (=>) are a shorter, cooler way to write functions.", "Arrow function (=>) တွေက function ရေးတဲ့ ပိုတို၊ ပိုမိုက်တဲ့ နည်းလမ်းပါ။", "const bark = () => {\n  console.log('Woof!');\n};", "Which symbol makes an arrow function?", "ဘယ်လက္ခဏာက Arrow function ဖြစ်စေလဲ?", ["->", "=>", "==>"], ["->", "=>", "==>"], 1),
+  L(58, "Objects Intro", "Objects (အရာဝတ္ထုများ)", "Objects store data in Key-Value pairs, like a dictionary. We use curly braces { }.", "Object တွေက ဒေတာတွေကို Key-Value အတွဲလိုက် သိမ်းပေးပါတယ်။ တွန့်ကွင်း { } ကို သုံးပါတယ်။", "let player = {\n  name: 'Leo',\n  hp: 100\n};", "What brackets do Objects use?", "Object တွေမှာ ဘယ်ကွင်းကို သုံးလဲ?", ["( )", "[ ]", "{ }"], ["( )", "[ ]", "{ }"], 2),
+  L(59, "Dot Notation", "Dot Notation (အစက်ဖြင့်ခေါ်ခြင်း)", "You can read an object's property by using a dot (.) and the key name.", "အစက် (.) နဲ့ key နာမည်ကို သုံးပြီး Object ရဲ့ တန်ဖိုးကို ဖတ်လို့ရပါတယ်။", "console.log(player.name); // 'Leo'", "How do you access 'hp' of 'player'?", "'player' ရဲ့ 'hp' ကို ဘယ်လိုယူမလဲ?", ["player/hp", "player.hp", "player->hp"], ["player/hp", "player.hp", "player->hp"], 1),
+  L(60, "Adding Properties", "Properties အသစ်ထည့်ခြင်း", "You can easily add new properties to an object just by giving them a value.", "Object ထဲကို တန်ဖိုးအသစ်ပေးလိုက်ရုံနဲ့ property အသစ်တွေ အလွယ်တကူ ထည့်နိုင်ပါတယ်။", "player.level = 2;\n// Now player has a level!", "How do you add 'speed = 5' to 'car'?", "'car' ထဲကို 'speed = 5' ဘယ်လိုထည့်မလဲ?", ["car + speed = 5", "car.speed = 5", "add car.speed 5"], ["car + speed = 5", "car.speed = 5", "add car.speed 5"], 1),
+
+  // 61-65: Objects & Math
+  L(61, "Deleting Properties", "Properties ဖျက်ခြင်း", "Use the 'delete' keyword to remove a property from an object.", "'delete' စကားလုံးကို သုံးပြီး Object ထဲက property ကို ဖျက်နိုင်ပါတယ်။", "delete player.hp;", "Which keyword removes a property?", "ဘယ်စကားလုံးက property ကို ဖျက်လဲ?", ["remove", "erase", "delete"], ["remove", "erase", "delete"], 2),
+  L(62, "Object Methods", "Object Methods", "If a property is a function, it's called a Method! Objects can DO things.", "Property တစ်ခုက function ဖြစ်နေရင် အဲဒါကို Method လို့ခေါ်တယ်။ Object တွေက အလုပ်လုပ်နိုင်တယ်!", "let dog = {\n  bark: () => console.log('Woof')\n};\ndog.bark();", "A function inside an object is called a...?", "Object ထဲက function ကို ဘာလို့ခေါ်လဲ?", ["Variable", "Method", "Array"], ["Variable", "Method", "Array"], 1),
+  L(63, "Math.round()", "Math.round() (ကိန်းပြည့်ပြုခြင်း)", "Math.round() rounds a decimal number to the nearest whole number.", "Math.round() က ဒသမကိန်းကို အနီးစပ်ဆုံး ကိန်းပြည့်ဖြစ်အောင် လုပ်ပေးပါတယ်။", "Math.round(4.6); // 5\nMath.round(4.2); // 4", "What does Math.round(9.9) output?", "Math.round(9.9) က ဘာဖြစ်မလဲ?", ["9", "9.9", "10"], ["၉", "၉.၉", "၁၀"], 2),
+  L(64, "Math.floor()", "Math.floor()", "Math.floor() ALWAYS rounds DOWN, like dropping the number to the floor.", "Math.floor() က အမြဲတမ်း အောက်ကို (အငယ်ဘက်ကို) လျှော့ချပေးပါတယ်။", "Math.floor(4.9); // 4", "What is Math.floor(8.99)?", "Math.floor(8.99) က ဘာလဲ?", ["8", "9", "8.9"], ["၈", "၉", "၈.၉"], 0),
+  L(65, "Math.ceil()", "Math.ceil()", "Math.ceil() ALWAYS rounds UP, like pushing the number to the ceiling.", "Math.ceil() က အမြဲတမ်း အပေါ်ကို (အကြီးဘက်ကို) တိုးပေးပါတယ်။", "Math.ceil(4.1); // 5", "What is Math.ceil(2.01)?", "Math.ceil(2.01) က ဘာလဲ?", ["2", "3", "2.1"], ["၂", "၃", "၂.၁"], 1),
+
+  // 66-70: Math.random & Dates
+  L(66, "Math.random()", "Math.random() (ကျပန်းဂဏန်း)", "Math.random() gives a random decimal number between 0 and 1 (but never exactly 1).", "Math.random() က ၀ နဲ့ ၁ ကြား (၁ တော့ လုံးဝမဖြစ်တဲ့) ကျပန်းဒသမကိန်းတစ်ခုကို ထုတ်ပေးပါတယ်။", "let r = Math.random();", "Can Math.random() return 2?", "Math.random() က ၂ ထွက်နိုင်လား?", ["Yes", "No"], ["ထွက်နိုင်တယ်", "မထွက်နိုင်ဘူး"], 1),
+  L(67, "Random 1 to 10", "၁ မှ ၁၀ ကျပန်းဂဏန်း", "Combine random() and floor() to get a whole random number!", "random() နဲ့ floor() ပေါင်းပြီး ကျပန်းကိန်းပြည့်တစ်ခု ရယူနိုင်ပါတယ်။", "let num = Math.floor(Math.random() * 10) + 1;", "Why add + 1?", "+ 1 ဘာလို့ထည့်တာလဲ?", ["Because math is hard", "To start from 1 instead of 0", "To make it an even number"], ["သင်္ချာခက်လို့", "၀ အစား ၁ ကနေစဖို့", "စုံကိန်းဖြစ်အောင်လို့"], 1),
+  L(68, "Date Object", "Date Object (ရက်စွဲ)", "You can get the current date and time by creating a new Date object.", "new Date ကို ဖန်တီးပြီး လက်ရှိ ရက်စွဲနဲ့ အချိန်ကို ရယူနိုင်ပါတယ်။", "let now = new Date();", "How do you create a date?", "Date ကို ဘယ်လိုဖန်တီးမလဲ?", ["Date()", "new Date()", "make Date()"], ["Date()", "new Date()", "make Date()"], 1),
+  L(69, "getFullYear()", "getFullYear() (ခုနှစ်ရယူခြင်း)", "Use .getFullYear() on a date object to get the 4-digit year.", "Date object မှာ .getFullYear() သုံးပြီး ဂဏန်း ၄ လုံးပါတဲ့ ခုနှစ်ကို ရယူပါ။", "let year = now.getFullYear();", "What does getFullYear() return?", "getFullYear() က ဘာပြန်ပေးလဲ?", ["24", "2024 (or current year)", "December"], ["၂၄", "၂၀၂၄ (သို့မဟုတ် ယခုနှစ်)", "ဒီဇင်ဘာ"], 1),
+  L(70, "getMonth()", "getMonth() (လရယူခြင်း)", "Warning! getMonth() starts counting from 0. January is 0, December is 11.", "သတိထားပါ! getMonth() က ၀ ကနေစရေပါတယ်။ ဇန်နဝါရီက ၀၊ ဒီဇင်ဘာက ၁၁ ပါ။", "let month = now.getMonth();", "If it is January, what is the month number?", "ဇန်နဝါရီလဆိုရင် လနံပါတ်က ဘာလဲ?", ["0", "1", "12"], ["၀", "၁", "၁၂"], 0),
+
+  // 71-75: Array Methods Advanced
+  L(71, "Array slice()", "Array slice() (ပိုင်းဖြတ်ခြင်း)", "slice() copies a piece of an array and gives you a new one. The original stays safe!", "slice() က Array တစ်စိတ်တစ်ပိုင်းကို ကူးယူပြီး အသစ်ပေးပါတယ်။ မူလ Array က မပျက်ပါဘူး။", "let arr = ['a', 'b', 'c'];\nlet piece = arr.slice(0, 2); // ['a', 'b']", "Does slice() change the original array?", "slice() က မူလ Array ကို ပြောင်းလဲပစ်လား?", ["Yes", "No"], ["ပြောင်းတယ်", "မပြောင်းဘူး"], 1),
+  L(72, "Array splice()", "Array splice() (ဖြတ်ဆက်ခြင်း)", "splice() is like a surgical knife. It can add or remove items anywhere, changing the original array!", "splice() က ခွဲစိတ်ဓားလိုပဲ။ နေရာတိုင်းမှာ ပစ္စည်းဖြည့်တာ၊ ဖျက်တာ လုပ်နိုင်ပြီး မူလ Array ကို ပြောင်းပစ်ပါတယ်။", "let nums = [1, 2, 3];\nnums.splice(1, 1); // Removes '2'", "Does splice() modify the original array?", "splice() က မူလ Array ကို ပြင်ပစ်လား?", ["Yes", "No"], ["ပြင်တယ်", "မပြင်ဘူး"], 0),
+  L(73, "Array join()", "Array join() (ဆက်စပ်ခြင်း)", "join() takes an array and squashes it into one single String.", "join() က Array ထဲက ဟာတွေကို စာသားတစ်ခုတည်းဖြစ်အောင် ပေါင်းပေးပါတယ်။", "let letters = ['H', 'i'];\nlet word = letters.join(''); // 'Hi'", "What does join() create?", "join() က ဘာဖန်တီးပေးလဲ?", ["A new Array", "A String", "A Boolean"], ["Array အသစ်", "စာသား (String)", "Boolean"], 1),
+  L(74, "Array reverse()", "Array reverse() (ပြောင်းပြန်လှန်ခြင်း)", "reverse() flips the array backwards. The last item becomes the first!", "reverse() က Array ကို နောက်ပြန်လှည့်ပစ်တယ်။ နောက်ဆုံးက ပထမဆုံး ဖြစ်သွားမယ်!", "let arr = [1, 2];\narr.reverse(); // [2, 1]", "What does [5, 6].reverse() become?", "[5, 6].reverse() က ဘာဖြစ်မလဲ?", ["Error", "[6, 5]", "[5, 6]"], ["Error", "[6, 5]", "[5, 6]"], 1),
+  L(75, "Array sort()", "Array sort() (စီစဉ်ခြင်း)", "sort() sorts an array alphabetically. Great for strings, tricky for numbers!", "sort() က အက္ခရာစဉ်အတိုင်း စီပေးတယ်။ စာသားတွေအတွက်ကောင်းပေမယ့် ဂဏန်းတွေအတွက် သတိထားရမယ်!", "let letters = ['Z', 'A'];\nletters.sort(); // ['A', 'Z']", "How does standard sort() order items?", "ပုံမှန် sort() က ဘယ်လိုစီပေးလဲ?", ["Randomly", "Alphabetically as strings", "By size"], ["ကျပန်းစီတယ်", "စာသားအက္ခရာစဉ်အတိုင်းစီတယ်", "အရွယ်အစားအလိုက်စီတယ်"], 1),
+
+  // 76-80: Array Iteration (map, filter)
+  L(76, "Array map()", "Array map()", "map() runs a function on EVERY item and creates a brand NEW array with the results.", "map() က ပစ္စည်းတိုင်းပေါ်မှာ function အလုပ်လုပ်ပေးပြီး ရလဒ်တွေနဲ့ Array အသစ်တစ်ခု ဖန်တီးတယ်။", "let nums = [1, 2];\nlet doubled = nums.map(n => n * 2); // [2, 4]", "Does map() create a new array?", "map() က Array အသစ်ဖန်တီးလား?", ["Yes", "No"], ["ဖန်တီးတယ်", "မဖန်တီးဘူး"], 0),
+  L(77, "Array filter()", "Array filter() (စစ်ထုတ်ခြင်း)", "filter() keeps only the items that pass a true/false test.", "filter() က မှန်/မှား စစ်ဆေးချက်ကို အောင်မြင်တဲ့ ပစ္စည်းတွေကိုပဲ သိမ်းထားပေးပါတယ်။", "let nums = [10, 20, 5];\nlet big = nums.filter(n => n > 10); // [20]", "What does filter() do?", "filter() က ဘာလုပ်ပေးလဲ?", ["Changes items", "Keeps items that pass a test", "Deletes the array"], ["ပစ္စည်းတွေကို ပြောင်းတယ်", "စစ်ဆေးချက်အောင်တာကို ချန်ထားတယ်", "Array ကို ဖျက်တယ်"], 1),
+  L(78, "Array forEach()", "Array forEach()", "forEach() is just a loop for arrays. It does something for each item but doesn't make a new array.", "forEach() ဆိုတာ Array တွေအတွက် loop ပါပဲ။ ပစ္စည်းတိုင်းအတွက် အလုပ်တစ်ခုလုပ်ပေးပေမယ့် Array အသစ်မဖန်တီးပါဘူး။", "['a', 'b'].forEach(x => console.log(x));", "Does forEach() return a new array?", "forEach() က Array အသစ် ပြန်ပေးလား?", ["Yes", "No"], ["ပေးတယ်", "မပေးဘူး"], 1),
+  L(79, "Chaining Methods", "Methods များ ဆက်တိုက်သုံးခြင်း", "You can link array methods together like a chain! map().filter().reverse()", "Array method တွေကို ကွင်းဆက်တစ်ခုလို ဆက်တိုက် သုံးလို့ရတယ်! map().filter().reverse()", "arr.filter(n => n > 5).map(n => n*2);", "Can you use filter() and then map() right after?", "filter() သုံးပြီးတာနဲ့ map() တန်းသုံးလို့ရလား?", ["Yes", "No"], ["ရတယ်", "မရဘူး"], 0),
+  L(80, "Finding with find()", "find() ဖြင့် ရှာဖွေခြင်း", "find() looks through an array and returns the FIRST item that matches your condition.", "find() က Array ထဲမှာရှာပြီး သင်သတ်မှတ်ထားတဲ့ အခြေအနေနဲ့ ကိုက်ညီတဲ့ 'ပထမဆုံး' ပစ္စည်းကို ပြန်ပေးပါတယ်။", "let users = [{id: 1}, {id: 2}];\nlet u = users.find(x => x.id === 2);", "Does find() return an array or one item?", "find() က Array ပြန်ပေးလား၊ ပစ္စည်းတစ်ခုတည်းလား?", ["An array", "One item (the first match)"], ["Array တစ်ခု", "ပစ္စည်းတစ်ခု (ပထမဆုံးကိုက်ညီသူ)"], 1),
+
+  // 81-85: The DOM (Document Object Model)
+  L(81, "What is the DOM?", "DOM ဆိုတာ ဘာလဲ?", "The DOM is how JavaScript sees your HTML web page. It turns tags into Objects!", "DOM ဆိုတာ JavaScript က သင့် HTML ဝဘ်စာမျက်နှာကို မြင်တဲ့ပုံစံပါ။ Tag တွေကို Object အဖြစ် ပြောင်းပေးတယ်။", "console.log(document);", "What does the DOM represent?", "DOM က ဘာကို ကိုယ်စားပြုလဲ?", ["The internet connection", "The HTML web page", "The keyboard"], ["အင်တာနက်လိုင်း", "HTML ဝဘ်စာမျက်နှာ", "ကီးဘုတ်"], 1),
+  L(82, "getElementById()", "getElementById()", "This is the fastest way to find one specific HTML element using its 'id' attribute.", "ဒါက 'id' ကိုသုံးပြီး HTML element တစ်ခုကို အမြန်ဆုံး ရှာတဲ့နည်းလမ်းပါ။", "let title = document.getElementById('main-title');", "What attribute does getElementById look for?", "getElementById က ဘယ် attribute ကို ရှာလဲ?", ["class", "id", "style"], ["class", "id", "style"], 1),
+  L(83, "querySelector()", "querySelector()", "querySelector lets you find elements using CSS selectors (like .class or #id). Very powerful!", "querySelector က CSS selector တွေ (.class သို့ #id) သုံးပြီး ရှာခွင့်ပေးတယ်။ အရမ်းအသုံးဝင်တယ်!", "let btn = document.querySelector('.my-button');", "Can querySelector find a class like '.card'?", "querySelector က '.card' လို class မျိုးကို ရှာနိုင်လား?", ["Yes", "No"], ["ရှာနိုင်တယ်", "မရှာနိုင်ဘူး"], 0),
+  L(84, "innerHTML", "innerHTML", "innerHTML lets you change the HTML content inside an element.", "innerHTML က element အတွင်းက HTML အကြောင်းအရာတွေကို ပြောင်းလဲပေးနိုင်ပါတယ်။", "title.innerHTML = '<b>Welcome!</b>';", "Does innerHTML understand HTML tags like <b>?", "innerHTML က <b> လို HTML tag တွေကို နားလည်လား?", ["Yes", "No"], ["နားလည်တယ်", "မနားလည်ဘူး"], 0),
+  L(85, "innerText", "innerText", "innerText changes only the text. If you put HTML tags in here, they will just show up as words.", "innerText က စာသားကိုပဲ ပြောင်းပေးတယ်။ HTML tag ထည့်ရင် စာသားသက်သက်ပဲ ပေါ်လာလိမ့်မယ်။", "title.innerText = 'Just normal text';", "Which is safer to avoid accidental HTML rendering?", "မတော်တဆ HTML အလုပ်လုပ်သွားတာကို ကာကွယ်ဖို့ ဘယ်ဟာက ပိုလုံခြုံလဲ?", ["innerHTML", "innerText"], ["innerHTML", "innerText"], 1),
+
+  // 86-90: DOM Styling & Manipulation
+  L(86, "Changing Styles", "ဒီဇိုင်း (Style) ပြောင်းခြင်း", "You can change CSS styles directly using the .style property.", ".style property ကို သုံးပြီး CSS ဒီဇိုင်းတွေကို တိုက်ရိုက် ပြောင်းနိုင်ပါတယ်။", "box.style.backgroundColor = 'red';", "How do you change text color in JS?", "JS မှာ စာသားအရောင် ဘယ်လိုပြောင်းမလဲ?", ["elem.color = 'blue'", "elem.style.color = 'blue'", "elem.paint('blue')"], ["elem.color = 'blue'", "elem.style.color = 'blue'", "elem.paint('blue')"], 1),
+  L(87, "classList.add()", "classList.add()", "Instead of messy .style, it's better to add CSS classes that you already styled in your CSS file.", "ရှုပ်ပွနေတဲ့ .style ကိုသုံးမယ့်အစား CSS ဖိုင်မှာ ရေးထားတဲ့ class တွေကို ထည့်သုံးတာ ပိုကောင်းပါတယ်။", "box.classList.add('hidden');", "What does classList.add() do?", "classList.add() က ဘာလုပ်ပေးလဲ?", ["Adds math numbers", "Adds a CSS class", "Adds a new HTML tag"], ["သင်္ချာဂဏန်းပေါင်းတယ်", "CSS class တစ်ခုထည့်တယ်", "HTML tag အသစ်ထည့်တယ်"], 1),
+  L(88, "classList.remove()", "classList.remove()", "You can easily remove a class from an element using classList.remove().", "classList.remove() ကို သုံးပြီး element ထဲက class တစ်ခုကို အလွယ်တကူ ဖယ်ရှားနိုင်ပါတယ်။", "box.classList.remove('hidden'); // Box appears!", "How do you remove the class 'active'?", "'active' class ကို ဘယ်လိုဖယ်ရှားမလဲ?", ["elem.class = ''", "elem.remove('active')", "elem.classList.remove('active')"], ["elem.class = ''", "elem.remove('active')", "elem.classList.remove('active')"], 2),
+  L(89, "createElement()", "createElement()", "You can build brand new HTML elements from scratch inside JavaScript!", "JavaScript ထဲမှာတင် HTML element အသစ်တွေကို အစကနေ တည်ဆောက်နိုင်ပါတယ်။", "let newBtn = document.createElement('button');", "What does document.createElement('p') make?", "document.createElement('p') က ဘာဖန်တီးပေးလဲ?", ["A picture", "A paragraph <p> tag", "A play button"], ["ရုပ်ပုံ", "Paragraph <p> tag တစ်ခု", "Play ခလုတ်"], 1),
+  L(90, "appendChild()", "appendChild() (ထည့်သွင်းခြင်း)", "After creating an element, use appendChild() to actually stick it onto the webpage.", "Element ဖန်တီးပြီးရင် ဝဘ်စာမျက်နှာပေါ် တကယ်ရောက်သွားဖို့ appendChild() ကို သုံးရပါတယ်။", "document.body.appendChild(newBtn);", "Does createElement immediately show the item on screen?", "createElement က မျက်နှာပြင်ပေါ် ချက်ချင်း ပေါ်စေလား?", ["Yes", "No, you must append it first"], ["ပေါ်စေတယ်", "မပေါ်ဘူး၊ အရင် append လုပ်ရမယ်"], 1),
+
+  // 91-95: Events & Timers
+  L(91, "Events Intro", "Events (အဖြစ်အပျက်များ)", "Events are things that happen (like clicks or keyboard typing). JS can listen for them!", "Event ဆိုတာ ဖြစ်ပျက်သွားတဲ့ အရာတွေပါ (ဥပမာ - ကလစ်နှိပ်တာ၊ စာရိုက်တာ)။ JS က အဲဒါတွေကို နားထောင်နိုင်တယ်။", "// We use event listeners!", "Which of these is an Event?", "ဘယ်တစ်ခုက Event ဖြစ်မလဲ?", ["A variable", "A user clicking a button", "A string"], ["Variable တစ်ခု", "User က ခလုတ်နှိပ်ခြင်း", "String စာသား"], 1),
+  L(92, "addEventListener()", "addEventListener()", "This tells JS to wait and listen for a specific event on an element.", "ဒါက JS ကို element တစ်ခုပေါ်မှာ သတ်မှတ်ထားတဲ့ event လာမလား စောင့်နားထောင်ခိုင်းတာပါ။", "btn.addEventListener('click', () => {\n  alert('Clicked!');\n});", "What is the first argument in addEventListener?", "addEventListener ရဲ့ ပထမဆုံး argument က ဘာလဲ?", ["The event name (like 'click')", "A number", "An array"], ["Event နာမည် (ဥပမာ 'click')", "ဂဏန်းတစ်ခု", "Array တစ်ခု"], 0),
+  L(93, "Input Event", "Input Event", "The 'input' event fires every single time a user types a letter into a text box.", "'input' event က စာသားအကွက်ထဲကို user က စာတစ်လုံးရိုက်ထည့်တိုင်း အလုပ်လုပ်ပါတယ်။", "inputBox.addEventListener('input', ...);", "When does the 'input' event trigger?", "'input' event က ဘယ်အချိန် အလုပ်လုပ်လဲ?", ["When typing in a box", "When moving the mouse"], ["စာအကွက်ထဲ စာရိုက်တဲ့အခါ", "Mouse ရွှေ့တဲ့အခါ"], 0),
+  L(94, "setTimeout()", "setTimeout()", "setTimeout sets a timer to run some code ONCE after a delay (in milliseconds).", "setTimeout က သတ်မှတ်ထားတဲ့ အချိန် (မီလီစက္ကန့်) ကြာရင် ကုဒ်ကို တစ်ကြိမ် အလုပ်လုပ်ဖို့ အချိန်ကိုက်ပေးပါတယ်။", "setTimeout(() => {\n  console.log('Boo!');\n}, 2000); // 2 secs", "How long is 1000 milliseconds?", "မီလီစက္ကန့် ၁၀၀၀ ဆိုတာ ဘယ်လောက်ကြာလဲ?", ["1 minute", "10 seconds", "1 second"], ["၁ မိနစ်", "၁၀ စက္ကန့်", "၁ စက္ကန့်"], 2),
+  L(95, "setInterval()", "setInterval()", "setInterval is like a repeating alarm clock. It runs code OVER AND OVER every few milliseconds.", "setInterval က ထပ်ခါထပ်ခါမြည်တဲ့ နှိုးစက်လိုပဲ။ မီလီစက္ကန့်အလိုက် ကုဒ်ကို ထပ်ခါထပ်ခါ အလုပ်လုပ်စေတယ်။", "setInterval(() => {\n  score++;\n}, 1000);", "Does setInterval stop on its own?", "setInterval က သူ့ဘာသာ ရပ်သွားလား?", ["Yes", "No, it repeats forever"], ["ရပ်တယ်", "မရပ်ဘူး၊ အမြဲထပ်လုပ်နေတယ်"], 1),
+
+  // 96-100: Advanced Concepts & Conclusion
+  L(96, "clearInterval()", "clearInterval()", "To stop a setInterval, you must save its ID in a variable and pass it to clearInterval().", "setInterval ကိုရပ်ဖို့ သူ့ရဲ့ ID ကို variable ထဲသိမ်းထားပြီး clearInterval() ကို ပေးရပါတယ်။", "let myTimer = setInterval(...);\nclearInterval(myTimer);", "What does clearInterval do?", "clearInterval က ဘာလုပ်ပေးလဲ?", ["Speeds up time", "Stops an interval loop", "Clears the screen"], ["အချိန်ကို မြန်စေတယ်", "Interval loop ကို ရပ်ပစ်တယ်", "မျက်နှာပြင်ကို ရှင်းလင်းတယ်"], 1),
+  L(97, "JSON Intro", "JSON ဆိုတာဘာလဲ", "JSON (JavaScript Object Notation) is a standard way to send text data across the internet.", "JSON ဆိုတာ အင်တာနက်ပေါ်မှာ စာသားဒေတာတွေ ပေးပို့ဖို့ သုံးတဲ့ စံသတ်မှတ်ချက်တစ်ခုပါ။", "{ \"name\": \"Ko Ko\", \"age\": 13 }", "What is JSON used for?", "JSON ကို ဘာအတွက် သုံးလဲ?", ["Making graphics", "Sending/storing data", "Playing music"], ["ဂရပ်ဖစ်တွေဆွဲဖို့", "ဒေတာတွေပေးပို့/သိမ်းဆည်းဖို့", "သီချင်းဖွင့်ဖို့"], 1),
+  L(98, "JSON.stringify()", "JSON.stringify()", "stringify() turns a normal JavaScript Object into a JSON text string so you can save it.", "stringify() က ပုံမှန် JS Object ကို JSON စာသားအဖြစ် ပြောင်းပေးလို့ သိမ်းဆည်းရ လွယ်ကူသွားပါတယ်။", "let str = JSON.stringify({a:1});", "What does stringify do?", "stringify က ဘာလုပ်ပေးလဲ?", ["Turns object into string", "Turns string into object"], ["Object ကို စာသားပြောင်းပေးတယ်", "စာသားကို Object ပြောင်းပေးတယ်"], 0),
+  L(99, "JSON.parse()", "JSON.parse()", "parse() does the opposite! It turns a JSON text string back into a real JS Object.", "parse() က ပြောင်းပြန်အလုပ်လုပ်တယ်! JSON စာသားကို တကယ့် JS Object အဖြစ် ပြန်ပြောင်းပေးပါတယ်။", "let obj = JSON.parse('{\"a\":1}');", "If you download JSON text, how do you use it as an object?", "JSON စာသားကို ဒေါင်းလုဒ်လုပ်ပြီးရင် Object အဖြစ် ဘယ်လိုပြန်သုံးမလဲ?", ["JSON.stringify()", "JSON.parse()"], ["JSON.stringify()", "JSON.parse()"], 1),
+  L(100, "You Did It!", "ဂုဏ်ယူပါတယ်!", "You have learned the core concepts of JavaScript. You are now officially a coder! Keep building things!", "JavaScript ရဲ့ အရေးကြီးတဲ့ အခြေခံတွေကို သင်ယူပြီးပါပြီ။ သင်ဟာ တကယ့် Coder တစ်ယောက် ဖြစ်နေပါပြီ! ဆက်ပြီး ဖန်တီးလိုက်ပါ!", "console.log('I am a JS Master!');", "Are you ready to code your own apps?", "ကိုယ်ပိုင် App တွေ ရေးဖို့ အဆင်သင့်ဖြစ်ပြီလား?", ["YES!", "DEFINITELY YES!"], ["အဆင်သင့်ဖြစ်ပြီ!", "သေချာပေါက် ဖြစ်နေပြီ!"], 0)
+];
+
+export default function App() {
+  const [lang, setLang] = useState('my'); // 'en' or 'my'
+  const [currentId, setCurrentId] = useState(1);
+  const [completed, setCompleted] = useState([]);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [quizStatus, setQuizStatus] = useState('idle'); // 'idle', 'correct', 'wrong'
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Load progress on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('jsLearnerProgress');
+    if (saved) {
+      setCompleted(JSON.parse(saved));
+    }
+  }, []);
+
+  const saveProgress = (newCompleted) => {
+    setCompleted(newCompleted);
+    localStorage.setItem('jsLearnerProgress', JSON.stringify(newCompleted));
+  };
+
+  const currentLessonIndex = lessonsData.findIndex(l => l.id === currentId);
+  const lesson = lessonsData[currentLessonIndex];
+  const progressPercent = Math.round((completed.length / lessonsData.length) * 100);
+
+  const handleOptionClick = (idx) => {
+    if (quizStatus === 'correct') return; // already answered correctly
+
+    setSelectedOption(idx);
+    if (idx === lesson.quiz.ans) {
+      setQuizStatus('correct');
+      if (!completed.includes(currentId)) {
+        saveProgress([...completed, currentId]);
+      }
+    } else {
+      setQuizStatus('wrong');
+    }
+  };
+
+  const goToLesson = (id) => {
+    setCurrentId(id);
+    setSelectedOption(null);
+    setQuizStatus('idle');
+    setSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goNext = () => {
+    if (currentLessonIndex < lessonsData.length - 1) {
+      goToLesson(lessonsData[currentLessonIndex + 1].id);
+    }
+  };
+
+  const goPrev = () => {
+    if (currentLessonIndex > 0) {
+      goToLesson(lessonsData[currentLessonIndex - 1].id);
+    }
+  };
+
+  const toggleLang = () => {
+    setLang(lang === 'en' ? 'my' : 'en');
+  };
+
+  const lText = (obj) => obj[lang];
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans text-slate-800">
+      
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between bg-indigo-600 text-white p-4 sticky top-0 z-20 shadow-md">
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 bg-indigo-500 rounded-lg">
+          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+        <span className="font-bold text-lg flex items-center gap-2">
+          <Code size={20}/> JS Learner
+        </span>
+        <button onClick={toggleLang} className="p-2 bg-indigo-500 rounded-lg text-sm font-bold flex items-center gap-1">
+          <Globe size={16} /> {lang === 'en' ? 'MY' : 'EN'}
+        </button>
+      </div>
+
+      {/* Sidebar */}
+      <aside className={`
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0 transition-transform duration-300
+        fixed md:static inset-y-0 left-0 w-72 bg-white border-r border-slate-200 z-10 flex flex-col shadow-2xl md:shadow-none
+        h-full
+      `}>
+        <div className="hidden md:flex items-center justify-between p-6 border-b border-slate-100">
+          <span className="font-extrabold text-2xl text-indigo-600 flex items-center gap-2">
+            <Code className="text-indigo-500"/> JS Learner
+          </span>
+        </div>
+        
+        <div className="p-4 border-b border-slate-100 bg-indigo-50 flex justify-between items-center">
+          <div className="flex flex-col">
+            <span className="text-xs font-bold text-indigo-500 uppercase">Progress</span>
+            <span className="text-lg font-bold text-indigo-900">{completed.length} / 100</span>
+          </div>
+          <Trophy size={28} className={completed.length === 100 ? "text-yellow-500" : "text-indigo-300"} />
+        </div>
+        <div className="h-1 bg-slate-200">
+          <div className="h-full bg-indigo-500 transition-all duration-500" style={{width: `${progressPercent}%`}}></div>
+        </div>
+
+        <div className="overflow-y-auto flex-1 p-3 space-y-1 pb-24 md:pb-3">
+          {lessonsData.map((l, index) => {
+            const isCurrent = l.id === currentId;
+            const isCompleted = completed.includes(l.id);
+            return (
+              <button 
+                key={l.id}
+                onClick={() => goToLesson(l.id)}
+                className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center justify-between
+                  ${isCurrent ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-slate-100 text-slate-700'}
+                `}
+              >
+                <div className="flex items-center gap-3 truncate">
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
+                    ${isCurrent ? 'bg-indigo-400 text-white' : 'bg-slate-200 text-slate-500'}
+                  `}>
+                    {l.id}
+                  </span>
+                  <span className="truncate text-sm font-medium">{lText(l.title)}</span>
+                </div>
+                {isCompleted && <CheckCircle size={18} className={isCurrent ? "text-indigo-200" : "text-green-500"}/>}
+              </button>
+            )
+          })}
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto bg-slate-50 flex flex-col relative min-h-[calc(100vh-64px)] md:min-h-screen">
+        
+        {/* Desktop Topbar */}
+        <div className="hidden md:flex justify-end p-4 absolute top-0 right-0 w-full pointer-events-none">
+          <button 
+            onClick={toggleLang} 
+            className="pointer-events-auto bg-white border border-slate-200 shadow-sm text-slate-700 hover:text-indigo-600 px-4 py-2 rounded-full font-bold flex items-center gap-2 transition-colors">
+            <Globe size={18} /> {lang === 'en' ? 'Switch to မြန်မာ' : 'Switch to English'}
+          </button>
+        </div>
+
+        <div className="max-w-3xl w-full mx-auto p-4 md:p-10 pt-8 md:pt-20 pb-32">
+          
+          {/* Lesson Header */}
+          <div className="mb-8">
+            <div className="text-indigo-500 font-extrabold tracking-wider text-sm uppercase mb-2 flex items-center gap-2">
+              <PlayCircle size={18} /> Lesson {lesson.id} of 100
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight mb-4">
+              {lText(lesson.title)}
+            </h1>
+            <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
+              {lText(lesson.desc)}
+            </p>
+          </div>
+
+          {/* Code Example */}
+          <div className="bg-[#0d1117] rounded-2xl p-6 mb-10 shadow-lg overflow-x-auto border border-slate-800">
+            <div className="flex gap-2 mb-4">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <pre className="text-sm md:text-base font-mono text-blue-300">
+              <code>{lesson.code}</code>
+            </pre>
+          </div>
+
+          {/* Quiz Section */}
+          <div className={`rounded-2xl p-6 md:p-8 border-2 transition-all duration-300
+            ${quizStatus === 'correct' ? 'border-green-400 bg-green-50' : 
+              quizStatus === 'wrong' ? 'border-red-300 bg-red-50' : 'border-indigo-100 bg-white shadow-xl'}
+          `}>
+            <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <Star className={quizStatus === 'correct' ? 'text-green-500' : 'text-indigo-400'} /> 
+              {lText(lesson.quiz.q)}
+            </h2>
+
+            <div className="space-y-3">
+              {lText(lesson.quiz.options).map((opt, idx) => {
+                const isSelected = selectedOption === idx;
+                const isCorrectAns = idx === lesson.quiz.ans;
+                
+                let btnStyle = "border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700 bg-white";
+                
+                if (quizStatus !== 'idle') {
+                  if (isCorrectAns) {
+                    btnStyle = "border-green-500 bg-green-500 text-white"; // Correct answer always green
+                  } else if (isSelected && !isCorrectAns) {
+                    btnStyle = "border-red-500 bg-red-500 text-white"; // Wrong chosen answer is red
+                  } else {
+                    btnStyle = "border-slate-200 text-slate-400 bg-slate-50 opacity-50"; // Others dimmed
+                  }
+                }
+
+                return (
+                  <button
+                    key={idx}
+                    disabled={quizStatus === 'correct'}
+                    onClick={() => handleOptionClick(idx)}
+                    className={`w-full text-left p-4 rounded-xl border-2 font-medium transition-all ${btnStyle}`}
+                  >
+                    {opt}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Quiz Feedback */}
+            {quizStatus === 'correct' && (
+              <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-2">
+                <div className="text-green-600 font-bold flex items-center gap-2 text-lg">
+                  <Sparkles size={24}/> {lang === 'en' ? 'Excellent! Correct answer.' : 'တော်လိုက်တာ! အဖြေမှန်ပါတယ်။'}
+                </div>
+                {currentLessonIndex < lessonsData.length - 1 && (
+                  <button onClick={goNext} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-transform hover:scale-105 shadow-md">
+                    {lang === 'en' ? 'Next Lesson' : 'နောက်သင်ခန်းစာ'} <ArrowRight size={20} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {quizStatus === 'wrong' && (
+              <div className="mt-4 text-red-600 font-bold animate-pulse">
+                {lang === 'en' ? 'Oops! Try again.' : 'မှားနေပါတယ်။ ထပ်ကြိုးစားကြည့်ပါအုံး။'}
+              </div>
+            )}
+          </div>
+          
+        </div>
+      </main>
+      
+      {/* Fixed Bottom Navigation (for quick jumps if quiz is skipped/already done) */}
+      <div className="fixed bottom-0 left-0 md:left-72 right-0 bg-white border-t border-slate-200 p-4 flex justify-between items-center z-10">
+        <button 
+          onClick={goPrev} 
+          disabled={currentLessonIndex === 0}
+          className="px-4 py-2 rounded-lg text-slate-600 font-bold flex items-center gap-2 hover:bg-slate-100 disabled:opacity-30"
+        >
+          <ArrowLeft size={20}/> <span className="hidden sm:inline">{lang === 'en' ? 'Previous' : 'အရှေ့သို့'}</span>
+        </button>
+        
+        <span className="text-sm font-bold text-slate-400">
+          {currentId} / 100
+        </span>
+
+        <button 
+          onClick={goNext}
+          disabled={currentLessonIndex === lessonsData.length - 1}
+          className={`px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition-all
+            ${completed.includes(currentId) || quizStatus === 'correct' 
+              ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md' 
+              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}
+            disabled:opacity-30 disabled:pointer-events-none
+          `}
+        >
+          <span className="hidden sm:inline">{lang === 'en' ? 'Next' : 'နောက်သို့'}</span> <ArrowRight size={20}/>
+        </button>
+      </div>
+
+    </div>
+  );
+}
